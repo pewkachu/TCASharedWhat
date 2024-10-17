@@ -18,10 +18,10 @@ struct Feature {
         }
     }
 
-    enum Action {
+    enum Action: IOS16SharedStateAction {
         case onAppear
         case toggleThing
-        case sharedDidChange
+        case _sharedStateDidUpdate
     }
 
     enum CancelID {
@@ -35,11 +35,7 @@ struct Feature {
                 if #available(iOS 17.0, *) {
                     return .none
                 } else {
-                    return .run { [thing = state.$thing] send in
-                        for await _ in thing.publisher.values {
-                            await send(.sharedDidChange)
-                        }
-                    }
+                    return .syncSharedState(state.$thing)
                     .cancellable(id: CancelID.sharedState, cancelInFlight: true)
                 }
 
@@ -47,7 +43,7 @@ struct Feature {
                 state.thing.isOk.toggle()
                 return .none
 
-            case .sharedDidChange:
+            case ._sharedStateDidUpdate:
                 return .none
             }
         }
